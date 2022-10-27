@@ -7,7 +7,7 @@ import sys
 import time
 from pprint import pformat
 from types import FrameType
-from typing import Dict, List, Optional, Union, cast
+from typing import Optional, cast
 
 import pydbus
 from gi.repository import GLib
@@ -63,21 +63,21 @@ class RadiotrayNgApi:
                 time.sleep(1)
         self._radiotray_ng_dbus_api = self._radiotray_ng_dbus_obj["com.github.radiotray_ng"]
 
-    def get_bookmarks(self) -> Dict[str, Union[bool, str, int]]:
+    def get_bookmarks(self) -> dict[str, bool | str | int]:
         logger.debug('Calling "get_bookmarks" of the radiotray_ng api')
-        bookmarks: Dict[str, Union[bool, str, int]] = json.loads(self._radiotray_ng_dbus_api.get_bookmarks())
+        bookmarks: dict[str, bool | str | int] = json.loads(self._radiotray_ng_dbus_api.get_bookmarks())
         logger.debug("Bookmarks:\n%s", pformat(bookmarks))
         return bookmarks
 
-    def get_config(self) -> List[Dict[str, Union[str, List[Dict[str, str]]]]]:
+    def get_config(self) -> list[dict[str, str | list[dict[str, str]]]]:
         logger.debug('Calling "get_config" of the radiotray_ng api')
-        config: List[Dict[str, Union[str, List[Dict[str, str]]]]] = json.loads(self._radiotray_ng_dbus_api.get_config())
+        config: list[dict[str, str | list[dict[str, str]]]] = json.loads(self._radiotray_ng_dbus_api.get_config())
         logger.debug("Config:\n%s", pformat(config))
         return config
 
-    def get_player_state(self) -> Dict[str, Union[bool, str]]:
+    def get_player_state(self) -> dict[str, bool | str]:
         logger.debug('Calling "get_player_state" of the radiotray_ng api')
-        player_state: Dict[str, Union[bool, str]] = json.loads(self._radiotray_ng_dbus_api.get_player_state())
+        player_state: dict[str, bool | str] = json.loads(self._radiotray_ng_dbus_api.get_player_state())
         logger.debug("Player state:\n%s", pformat(player_state))
         return player_state
 
@@ -147,11 +147,11 @@ class RadiotrayNgMprisAdapter(MprisAdapter):  # type: ignore
     def has_tracklist(self) -> bool:
         return False
 
-    def get_uri_schemes(self) -> List[str]:
-        return cast(List[str], URI)
+    def get_uri_schemes(self) -> list[str]:
+        return cast(list[str], URI)
 
-    def get_mime_types(self) -> List[str]:
-        return cast(List[str], MIME_TYPES)
+    def get_mime_types(self) -> list[str]:
+        return cast(list[str], MIME_TYPES)
 
     def set_raise(self, val: bool) -> None:
         pass
@@ -310,21 +310,21 @@ class RadiotrayNgMprisAdapter(MprisAdapter):  # type: ignore
     def activate_playlist(self, id: DbusObj) -> None:
         pass
 
-    def get_playlists(self, index: int, max_count: int, order: str, reverse: bool) -> List[PlaylistEntry]:
+    def get_playlists(self, index: int, max_count: int, order: str, reverse: bool) -> list[PlaylistEntry]:
         # TODO
         pass
 
     def get_playlist_count(self) -> int:
         return cast(int, DEFAULT_PLAYLIST_COUNT)
 
-    def get_orderings(self) -> List[str]:
-        return cast(List[str], DEFAULT_ORDERINGS)
+    def get_orderings(self) -> list[str]:
+        return cast(list[str], DEFAULT_ORDERINGS)
 
     def get_active_playlist(self) -> ActivePlaylist:
         # TODO
         pass
 
-    def get_tracks_metadata(self, track_ids: List[DbusObj]) -> Metadata:
+    def get_tracks_metadata(self, track_ids: list[DbusObj]) -> Metadata:
         return DEFAULT_METADATA
 
     def add_track(self, uri: str, after_track: DbusObj, set_as_current: bool) -> None:
@@ -336,7 +336,7 @@ class RadiotrayNgMprisAdapter(MprisAdapter):  # type: ignore
     def go_to(self, track_id: DbusObj) -> None:
         pass
 
-    def get_tracks(self) -> List[DbusObj]:
+    def get_tracks(self) -> list[DbusObj]:
         # TODO
         pass
 
@@ -354,12 +354,12 @@ class RadiotrayNgEventAdapter:
         self._radiotray_ng_api = radiotray_ng_api
         self._mpris_server = Server("Radiotray-NG", adapter=radiotray_ng_mpris_adapter)
         self._event_adapter = EventAdapter(root=self._mpris_server.root, player=self._mpris_server.player)
-        self._previous_player_state: Optional[Dict[str, Union[bool, str]]] = None
+        self._previous_player_state: Optional[dict[str, bool | str]] = None
         self._enable_event_polling(poll_interval)
 
     def _enable_event_polling(self, poll_interval: int) -> None:
         def check_radiotray_state() -> bool:
-            def get_changed_state_attributes() -> Dict[str, Union[bool, str]]:
+            def get_changed_state_attributes() -> dict[str, bool | str]:
                 player_state = self._radiotray_ng_api.get_player_state()
                 if self._previous_player_state is None:
                     self._previous_player_state = player_state
