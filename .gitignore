@@ -1,5 +1,8 @@
 .*
+!.editorconfig
 !.gitignore
+!.markdownlint.yaml
+!.pre-commit-config.yaml
 *.egg-info/
 *.pyc
 __pycache__/
