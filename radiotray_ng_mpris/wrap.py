@@ -7,7 +7,7 @@ import sys
 import time
 from pprint import pformat
 from types import FrameType
-from typing import Optional
+from typing import Dict, List, Optional, Union, cast
 
 import pydbus
 from gi.repository import GLib
@@ -44,7 +44,7 @@ radiotray_ng_process = None
 
 
 class RadiotrayNgApi:
-    def __init__(self):
+    def __init__(self) -> None:
         self._session_bus = pydbus.SessionBus()
         try_count = 0
         while True:
@@ -63,21 +63,21 @@ class RadiotrayNgApi:
                 time.sleep(1)
         self._radiotray_ng_dbus_api = self._radiotray_ng_dbus_obj["com.github.radiotray_ng"]
 
-    def get_bookmarks(self) -> dict[str, bool | str | int]:
+    def get_bookmarks(self) -> Dict[str, Union[bool, str, int]]:
         logger.debug('Calling "get_bookmarks" of the radiotray_ng api')
-        bookmarks = json.loads(self._radiotray_ng_dbus_api.get_bookmarks())
+        bookmarks: Dict[str, Union[bool, str, int]] = json.loads(self._radiotray_ng_dbus_api.get_bookmarks())
         logger.debug("Bookmarks:\n%s", pformat(bookmarks))
         return bookmarks
 
-    def get_config(self) -> list[dict[str, str | list[dict[str, str]]]]:
+    def get_config(self) -> List[Dict[str, Union[str, List[Dict[str, str]]]]]:
         logger.debug('Calling "get_config" of the radiotray_ng api')
-        config = json.loads(self._radiotray_ng_dbus_api.get_config())
+        config: List[Dict[str, Union[str, List[Dict[str, str]]]]] = json.loads(self._radiotray_ng_dbus_api.get_config())
         logger.debug("Config:\n%s", pformat(config))
         return config
 
-    def get_player_state(self) -> dict[str, bool | str]:
+    def get_player_state(self) -> Dict[str, Union[bool, str]]:
         logger.debug('Calling "get_player_state" of the radiotray_ng api')
-        player_state = json.loads(self._radiotray_ng_dbus_api.get_player_state())
+        player_state: Dict[str, Union[bool, str]] = json.loads(self._radiotray_ng_dbus_api.get_player_state())
         logger.debug("Player state:\n%s", pformat(player_state))
         return player_state
 
@@ -93,7 +93,7 @@ class RadiotrayNgApi:
         logger.debug('Calling "play" of the radiotray_ng api')
         self._radiotray_ng_dbus_api.play()
 
-    def play_station(self, group: str, station: str):
+    def play_station(self, group: str, station: str) -> None:
         logger.debug('Calling "play_station" of the radiotray_ng api')
         self._radiotray_ng_dbus_api.play_station(group, station)
 
@@ -130,8 +130,8 @@ class RadiotrayNgApi:
         self._radiotray_ng_dbus_api.volume_up()
 
 
-class RadiotrayNgMprisAdapter(MprisAdapter):
-    def __init__(self, radiotray_ng_api):
+class RadiotrayNgMprisAdapter(MprisAdapter):  # type: ignore
+    def __init__(self, radiotray_ng_api: RadiotrayNgApi) -> None:
         super().__init__()
         self._radiotray_ng_api = radiotray_ng_api
 
@@ -147,22 +147,22 @@ class RadiotrayNgMprisAdapter(MprisAdapter):
     def has_tracklist(self) -> bool:
         return False
 
-    def get_uri_schemes(self) -> list[str]:
-        return URI
+    def get_uri_schemes(self) -> List[str]:
+        return cast(List[str], URI)
 
-    def get_mime_types(self) -> list[str]:
-        return MIME_TYPES
+    def get_mime_types(self) -> List[str]:
+        return cast(List[str], MIME_TYPES)
 
-    def set_raise(self, val: bool):
+    def set_raise(self, val: bool) -> None:
         pass
 
-    def quit(self):
+    def quit(self) -> None:
         self._radiotray_ng_api.quit()
 
     def get_fullscreen(self) -> bool:
         return False
 
-    def set_fullscreen(self, val: bool):
+    def set_fullscreen(self, val: bool) -> None:
         pass
 
     def get_desktop_entry(self) -> Paths:
@@ -197,22 +197,22 @@ class RadiotrayNgMprisAdapter(MprisAdapter):
     def get_current_position(self) -> Microseconds:
         return 0
 
-    def next(self):
+    def next(self) -> None:
         self._radiotray_ng_api.next_station()
 
-    def previous(self):
+    def previous(self) -> None:
         self._radiotray_ng_api.previous_station()
 
-    def pause(self):
+    def pause(self) -> None:
         self._radiotray_ng_api.stop()
 
-    def resume(self):
+    def resume(self) -> None:
         self._radiotray_ng_api.play()
 
-    def stop(self):
+    def stop(self) -> None:
         self._radiotray_ng_api.stop()
 
-    def play(self):
+    def play(self) -> None:
         self._radiotray_ng_api.play()
 
     def get_playstate(self) -> PlayState:
@@ -222,10 +222,10 @@ class RadiotrayNgMprisAdapter(MprisAdapter):
         else:
             return PlayState.STOPPED
 
-    def seek(self, time: Microseconds, track_id: Optional[DbusObj] = None):
+    def seek(self, time: Microseconds, track_id: Optional[DbusObj] = None) -> None:
         pass
 
-    def open_uri(self, uri: str):
+    def open_uri(self, uri: str) -> None:
         self._radiotray_ng_api.play_url(uri)
 
     def is_repeating(self) -> bool:
@@ -234,22 +234,22 @@ class RadiotrayNgMprisAdapter(MprisAdapter):
     def is_playlist(self) -> bool:
         return False
 
-    def set_repeating(self, val: bool):
+    def set_repeating(self, val: bool) -> None:
         pass
 
-    def set_loop_status(self, val: str):
+    def set_loop_status(self, val: str) -> None:
         pass
 
     def get_rate(self) -> RateDecimal:
         return DEFAULT_RATE
 
-    def set_rate(self, val: RateDecimal):
+    def set_rate(self, val: RateDecimal) -> None:
         pass
 
-    def set_minimum_rate(self, val: RateDecimal):
+    def set_minimum_rate(self, val: RateDecimal) -> None:
         pass
 
-    def set_maximum_rate(self, val: RateDecimal):
+    def set_maximum_rate(self, val: RateDecimal) -> None:
         pass
 
     def get_minimum_rate(self) -> RateDecimal:
@@ -258,13 +258,10 @@ class RadiotrayNgMprisAdapter(MprisAdapter):
     def get_maximum_rate(self) -> RateDecimal:
         return DEFAULT_RATE
 
-    def set_rate(self, val: RateDecimal):
-        pass
-
     def get_shuffle(self) -> bool:
         return False
 
-    def set_shuffle(self, val: bool):
+    def set_shuffle(self, val: bool) -> None:
         pass
 
     def get_art_url(self, track: int) -> str:
@@ -273,14 +270,15 @@ class RadiotrayNgMprisAdapter(MprisAdapter):
     def get_volume(self) -> VolumeDecimal:
         return float(self._radiotray_ng_api.get_player_state()["volume"])
 
-    def set_volume(self, val: VolumeDecimal):
+    def set_volume(self, val: VolumeDecimal) -> None:
         self._radiotray_ng_api.set_volume(int(val))
 
     def is_mute(self) -> bool:
         return bool(self._radiotray_ng_api.get_player_state()["mute"])
 
-    def set_mute(self, val: bool):
-        self._radiotray_ng_api.set_mute(val)
+    def set_mute(self, val: bool) -> None:
+        if val != self.is_mute():
+            self._radiotray_ng_api.mute()
 
     def can_go_next(self) -> bool:
         return True
@@ -309,36 +307,36 @@ class RadiotrayNgMprisAdapter(MprisAdapter):
     def get_next_track(self) -> Track:
         return Track("")
 
-    def activate_playlist(self, id: DbusObj):
+    def activate_playlist(self, id: DbusObj) -> None:
         pass
 
-    def get_playlists(self, index: int, max_count: int, order: str, reverse: bool) -> list[PlaylistEntry]:
+    def get_playlists(self, index: int, max_count: int, order: str, reverse: bool) -> List[PlaylistEntry]:
         # TODO
         pass
 
     def get_playlist_count(self) -> int:
-        return DEFAULT_PLAYLIST_COUNT
+        return cast(int, DEFAULT_PLAYLIST_COUNT)
 
-    def get_orderings(self) -> list[str]:
-        return DEFAULT_ORDERINGS
+    def get_orderings(self) -> List[str]:
+        return cast(List[str], DEFAULT_ORDERINGS)
 
     def get_active_playlist(self) -> ActivePlaylist:
         # TODO
         pass
 
-    def get_tracks_metadata(self, track_ids: list[DbusObj]) -> Metadata:
+    def get_tracks_metadata(self, track_ids: List[DbusObj]) -> Metadata:
         return DEFAULT_METADATA
 
-    def add_track(self, uri: str, after_track: DbusObj, set_as_current: bool):
+    def add_track(self, uri: str, after_track: DbusObj, set_as_current: bool) -> None:
         pass
 
-    def remove_track(self, track_id: DbusObj):
+    def remove_track(self, track_id: DbusObj) -> None:
         pass
 
-    def go_to(self, track_id: DbusObj):
+    def go_to(self, track_id: DbusObj) -> None:
         pass
 
-    def get_tracks(self) -> list[DbusObj]:
+    def get_tracks(self) -> List[DbusObj]:
         # TODO
         pass
 
@@ -356,12 +354,12 @@ class RadiotrayNgEventAdapter:
         self._radiotray_ng_api = radiotray_ng_api
         self._mpris_server = Server("Radiotray-NG", adapter=radiotray_ng_mpris_adapter)
         self._event_adapter = EventAdapter(root=self._mpris_server.root, player=self._mpris_server.player)
-        self._previous_player_state: Optional[dict[str, bool | str]] = None
+        self._previous_player_state: Optional[Dict[str, Union[bool, str]]] = None
         self._enable_event_polling(poll_interval)
 
-    def _enable_event_polling(self, poll_interval):
-        def check_radiotray_state():
-            def get_changed_state_attributes() -> dict[str, bool | str]:
+    def _enable_event_polling(self, poll_interval: int) -> None:
+        def check_radiotray_state() -> bool:
+            def get_changed_state_attributes() -> Dict[str, Union[bool, str]]:
                 player_state = self._radiotray_ng_api.get_player_state()
                 if self._previous_player_state is None:
                     self._previous_player_state = player_state
@@ -430,11 +428,11 @@ class RadiotrayNgEventAdapter:
 
         GLib.timeout_add(poll_interval, check_radiotray_state)
 
-    def publish_and_loop(self):
+    def publish_and_loop(self) -> None:
         self._mpris_server.loop()
 
 
-def start_radiotray_ng(play: bool) -> subprocess.Popen:
+def start_radiotray_ng(play: bool) -> subprocess.Popen[str]:
     global radiotray_ng_process
 
     args = ["radiotray-ng"]
@@ -444,8 +442,8 @@ def start_radiotray_ng(play: bool) -> subprocess.Popen:
     return radiotray_ng_process
 
 
-def setup_signal_handling():
-    def handle_sigint_sigterm(sig: int, frame: Optional[FrameType]):
+def setup_signal_handling() -> None:
+    def handle_sigint_sigterm(sig: int, frame: Optional[FrameType]) -> None:
         logger.debug("Got signal %s", signal.Signals(sig).name)
         if radiotray_ng_process is not None and radiotray_ng_process.poll() is None:
             logger.info("Send a quit request to Radiotray NG")
