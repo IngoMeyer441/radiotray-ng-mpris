@@ -1,0 +1,169 @@
+stages:
+- check
+- build
+- deploy
+
+pre-commit:
+  stage: check
+  image: python:3-slim
+  before_script:
+  - apt-get update
+  - apt-get install -y git
+  - pip install "pre-commit==2.20.0"
+  script:
+  - TMP_MSG_FILE="$(mktemp)"
+  - git log -1 --pretty=%B > "${TMP_MSG_FILE}"
+  - pre-commit run
+      --all-files
+      --color=always
+      --show-diff-on-failure
+      --hook-stage commit &&
+    pre-commit run
+      --all-files
+      --color=always
+      --show-diff-on-failure
+      --hook-stage commit-msg
+      --commit-msg-filename "${TMP_MSG_FILE}" &&
+    pre-commit run
+      --all-files
+      --color=always
+      --show-diff-on-failure
+      --hook-stage post-commit ||
+    {
+      >&2 echo "pre-commit checks failed. Please consider installing pre-commit";
+      >&2 echo "hooks in your local Git clone by running \`make git-hooks-install\`.";
+      exit 1;
+    }
+
+build-linux-executable:
+  stage: build
+  image: rockylinux:8
+  before_script:
+  - dnf groupinstall -y "Development Tools"
+  - dnf install -y
+      bzip2-devel
+      cairo-devel
+      cairo-gobject-devel
+      gobject-introspection-devel
+      libffi-devel
+      openssl-devel
+      zlib-devel
+  - curl -fLO 'https://www.python.org/ftp/python/3.10.8/Python-3.10.8.tgz'
+  - tar -xvf Python-3.10.8.tgz
+  - cd Python-3.10.8
+  - ./configure --enable-shared --enable-optimizations --with-lto
+  - make -j 4
+  - make install
+  - cd ..
+  - echo "/usr/local/lib" > /etc/ld.so.conf.d/usr_local.conf
+  - ldconfig
+  - python3 -m pip install -U pip setuptools wheel
+  - patch -Np1 < <(
+      echo 'diff --git a/setup.py b/setup.py';
+      echo 'index 486542f..93a40b7 100644';
+      echo '--- a/setup.py';
+      echo '+++ b/setup.py';
+      echo '@@ -41,6 +41,9 @@ if __name__ == "__main__":';
+      echo '             subprocess.check_call(';
+      echo '                 [';
+      echo '                     os.path.join(temp_dir, "env/bin/pyinstaller"),';
+      echo '+                    "--add-binary=/usr/lib64/libcrypt.so.1:.",';
+      echo '+                    "--add-binary=/usr/lib64/libffi.so.6:.",';
+      echo '+                    "--add-binary=/usr/lib64/libgirepository-1.0.so.1:.",';
+      echo '                     "--clean",';
+      echo '                     "--name=radiotray-ng-mpris",';
+      echo '                     "--onefile",';
+    )
+  script:
+  - python3 setup.py bdist_pyinstaller
+  - PLATFORM=$(python3 -c 'import platform; print("{}_{}".format(platform.system(), platform.machine()).lower())');
+    mv "dist/${CI_PROJECT_NAME}" "dist/${CI_PROJECT_NAME}_${PLATFORM}"
+  artifacts:
+    expire_in: 1 week
+    paths:
+    - dist/
+
+deploy-to-github:
+  stage: deploy
+  image: python:3-slim
+  variables:
+    GIT_STRATEGY: none
+  only:
+  - master@IngoMeyer/radiotray-ng-mpris
+  - develop@IngoMeyer/radiotray-ng-mpris
+  - tags@IngoMeyer/radiotray-ng-mpris
+  before_script:
+  - apt-get update
+  - apt-get install -y file git
+  - mkdir --mode=700 ~/.ssh/
+  - (umask 0377 && echo "${GITHUB_DEPLOY_KEY}" > ~/.ssh/id_rsa
+                && echo "github.com ${GITHUB_HOST_KEY}" >> ~/.ssh/known_hosts)
+  script:
+  - git clone --mirror "${CI_REPOSITORY_URL}" "${CI_PROJECT_NAME}_mirror"
+  - cd "${CI_PROJECT_NAME}_mirror";
+    git push --mirror "git@github.com:IngoMeyer441/${CI_PROJECT_NAME}.git";
+    cd ..
+  - if echo "${CI_COMMIT_TAG}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+      pip install github-binary-upload;
+      echo "${GITHUB_ACCESS_TOKEN}" |
+        github-binary-upload --user IngoMeyer441 "IngoMeyer441/${CI_PROJECT_NAME}" "${CI_COMMIT_TAG}" dist/*;
+    fi
+
+deploy-to-pypi:
+  stage: deploy
+  image: python:3-slim
+  only:
+  - tags@IngoMeyer/radiotray-ng-mpris
+  before_script:
+  - pip install twine
+  - echo "[distutils]"                    > ~/.pypirc;
+    echo "index-servers ="               >> ~/.pypirc;
+    echo "    pypi"                      >> ~/.pypirc;
+    echo "[pypi]"                        >> ~/.pypirc;
+    echo "username = __token__"          >> ~/.pypirc;
+    echo "password = ${PYPI_DEPLOY_KEY}" >> ~/.pypirc;
+  script:
+  - python setup.py sdist
+  - python setup.py bdist_wheel
+  - twine upload dist/*.tar.gz dist/*.whl
+
+deploy-to-aur:
+  stage: deploy
+  needs:
+  - deploy-to-github
+  image: archlinux:base-devel
+  only:
+  - tags@IngoMeyer/radiotray-ng-mpris
+  before_script:
+  - pacman -Syu --noconfirm
+  - pacman -S --noconfirm --needed git openssh
+  - useradd -m deploy
+  - sudo -u deploy bash -c "
+      git config --global user.name \"AUR updater\" &&
+      git config --global user.email \"aur@updater.org\" &&
+      mkdir --mode=700 ~/.ssh/ &&
+      (
+        umask 0377 &&
+        echo \"$AUR_PRIVATE_KEY\" > ~/.ssh/id_rsa &&
+        echo \"aur.archlinux.org $AUR_HOST_KEY\" >> ~/.ssh/known_hosts
+      )
+    "
+  script:
+  - sudo -u deploy bash -c "
+      git clone \"ssh://aur@aur.archlinux.org/${CI_PROJECT_NAME}.git\" \"${CI_PROJECT_NAME}-aur\" &&
+      cd \"${CI_PROJECT_NAME}-aur\" &&
+      sed
+        -i
+        -e \"/^pkgver=/c\pkgver=\\\"${CI_COMMIT_TAG#v}\\\"\"
+        -e \"/^pkgrel=/c\pkgrel=\\\"1\\\"\"
+        PKGBUILD &&
+      (
+        source PKGBUILD;
+        curl -o source -L \"\${source[0]}\";
+        SHA256SUM=\"\$(sha256sum source | awk '{ print \$1 }')\";
+        sed -i \"/^sha256sums=/c\sha256sums=(\\\"\${SHA256SUM}\\\")\" PKGBUILD;
+      ) &&
+      makepkg --printsrcinfo > .SRCINFO &&
+      git commit -a -m \"Update to version ${CI_COMMIT_TAG#v}\" &&
+      git push
+    "
