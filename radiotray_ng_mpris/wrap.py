@@ -115,7 +115,7 @@ class RadiotrayNgApi:
 
     def set_volume(self, level: int) -> None:
         logger.debug('Calling "set_volume" of the radiotray_ng api')
-        self._radiotray_ng_dbus_api.set_volume(level)
+        self._radiotray_ng_dbus_api.set_volume(str(level))
 
     def stop(self) -> None:
         logger.debug('Calling "stop" of the radiotray_ng api')
@@ -268,10 +268,10 @@ class RadiotrayNgMprisAdapter(MprisAdapter):  # type: ignore
         return ""
 
     def get_volume(self) -> VolumeDecimal:
-        return float(self._radiotray_ng_api.get_player_state()["volume"])
+        return float(self._radiotray_ng_api.get_player_state()["volume"]) / 100
 
     def set_volume(self, val: VolumeDecimal) -> None:
-        self._radiotray_ng_api.set_volume(int(val))
+        self._radiotray_ng_api.set_volume(int(val * 100))
 
     def is_mute(self) -> bool:
         return bool(self._radiotray_ng_api.get_player_state()["mute"])
