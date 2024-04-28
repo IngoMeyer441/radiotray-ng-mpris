@@ -11,7 +11,7 @@ from typing import Optional, cast
 
 import pydbus
 from gi.repository import GLib
-from mpris_server import Metadata, MetadataObj
+from mpris_server import Metadata, MetadataObj, Microseconds
 from mpris_server.adapters import (
     DEFAULT_DESKTOP,
     DEFAULT_ORDERINGS,
@@ -34,6 +34,10 @@ from mpris_server.adapters import (
 from mpris_server.events import EventAdapter
 from mpris_server.mpris.metadata import DEFAULT_METADATA
 from mpris_server.server import Server
+
+from mpris_server.interfaces.player import Rate, Volume
+RateDecimal = Rate
+VolumeDecimal = Volume
 
 MAX_DBUS_GET_TRY_COUNT = 10
 RADIOTRAY_NG_DEFAULT_POLL_INTERVAL = 1000  # ms
