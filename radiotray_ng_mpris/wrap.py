@@ -11,29 +11,30 @@ from typing import Optional, cast
 
 import pydbus
 from gi.repository import GLib
-from mpris_server import Metadata, MetadataObj
-from mpris_server.adapters import (
+from mpris_server.adapters import ActivePlaylist, MprisAdapter
+from mpris_server.base import (
     DEFAULT_DESKTOP,
     DEFAULT_ORDERINGS,
     DEFAULT_PLAYLIST_COUNT,
     DEFAULT_RATE,
     MIME_TYPES,
     URI,
-    ActivePlaylist,
     DbusObj,
     Microseconds,
-    MprisAdapter,
     Paths,
     PlaylistEntry,
     PlayState,
-    RateDecimal,
     Track,
-    ValidMetadata,
-    VolumeDecimal,
 )
 from mpris_server.events import EventAdapter
-from mpris_server.mpris.metadata import DEFAULT_METADATA
+from mpris_server.mpris.metadata import DEFAULT_METADATA, Metadata, MetadataObj, ValidMetadata
 from mpris_server.server import Server
+
+try:
+    from mpris_server.base import Rate, Volume
+except ImportError:
+    from mpris_server.base import RateDecimal as Rate
+    from mpris_server.base import VolumeDecimal as Volume
 
 MAX_DBUS_GET_TRY_COUNT = 10
 RADIOTRAY_NG_DEFAULT_POLL_INTERVAL = 1000  # ms
@@ -240,22 +241,22 @@ class RadiotrayNgMprisAdapter(MprisAdapter):  # type: ignore
     def set_loop_status(self, val: str) -> None:
         pass
 
-    def get_rate(self) -> RateDecimal:
+    def get_rate(self) -> Rate:
         return DEFAULT_RATE
 
-    def set_rate(self, val: RateDecimal) -> None:
+    def set_rate(self, val: Rate) -> None:
         pass
 
-    def set_minimum_rate(self, val: RateDecimal) -> None:
+    def set_minimum_rate(self, val: Rate) -> None:
         pass
 
-    def set_maximum_rate(self, val: RateDecimal) -> None:
+    def set_maximum_rate(self, val: Rate) -> None:
         pass
 
-    def get_minimum_rate(self) -> RateDecimal:
+    def get_minimum_rate(self) -> Rate:
         return DEFAULT_RATE
 
-    def get_maximum_rate(self) -> RateDecimal:
+    def get_maximum_rate(self) -> Rate:
         return DEFAULT_RATE
 
     def get_shuffle(self) -> bool:
@@ -267,10 +268,10 @@ class RadiotrayNgMprisAdapter(MprisAdapter):  # type: ignore
     def get_art_url(self, track: int) -> str:
         return ""
 
-    def get_volume(self) -> VolumeDecimal:
+    def get_volume(self) -> Volume:
         return float(self._radiotray_ng_api.get_player_state()["volume"]) / 100
 
-    def set_volume(self, val: VolumeDecimal) -> None:
+    def set_volume(self, val: Volume) -> None:
         self._radiotray_ng_api.set_volume(int(val * 100))
 
     def is_mute(self) -> bool:
