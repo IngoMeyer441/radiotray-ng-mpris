@@ -1,16 +1,15 @@
 import os
 import runpy
 import subprocess
-from distutils.cmd import Command
 from tempfile import TemporaryDirectory
 from typing import List, Optional, Tuple, cast
 
-from setuptools import find_packages, setup
+from setuptools import Command, find_packages, setup
 
 
 class PyinstallerCommand(Command):
     description = "create a self-contained executable with PyInstaller"
-    user_options = []  # type: List[Tuple[str, Optional[str], str]]
+    user_options: List[Tuple[str, Optional[str], str]] = []
 
     def initialize_options(self) -> None:
         pass
@@ -55,8 +54,8 @@ def get_version_from_pyfile(version_file: str = "radiotray_ng_mpris/_version.py"
     return cast(str, file_globals["__version__"])
 
 
-def get_long_description_from_readme(readme_filename: str = "README.md") -> Optional[str]:
-    long_description = None
+def get_long_description_from_readme(readme_filename: str = "README.md") -> str:
+    long_description = ""
     if os.path.isfile(readme_filename):
         with open(readme_filename, "r", encoding="utf-8") as readme_file:
             long_description = readme_file.read()

@@ -87,13 +87,11 @@ def parse_arguments() -> argparse.Namespace:
     args.verbosity_level = (
         Verbosity.QUIET
         if args.quiet
-        else Verbosity.ERROR
-        if args.error
-        else Verbosity.VERBOSE
-        if args.verbose
-        else Verbosity.DEBUG
-        if args.debug
-        else Verbosity.WARN
+        else (
+            Verbosity.ERROR
+            if args.error
+            else Verbosity.VERBOSE if args.verbose else Verbosity.DEBUG if args.debug else Verbosity.WARN
+        )
     )
     return args
 

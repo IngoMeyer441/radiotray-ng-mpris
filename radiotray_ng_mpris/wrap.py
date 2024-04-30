@@ -313,7 +313,7 @@ class RadiotrayNgMprisAdapter(MprisAdapter):  # type: ignore
 
     def get_playlists(self, index: int, max_count: int, order: str, reverse: bool) -> list[PlaylistEntry]:
         # TODO
-        pass
+        return []
 
     def get_playlist_count(self) -> int:
         return cast(int, DEFAULT_PLAYLIST_COUNT)
@@ -339,7 +339,7 @@ class RadiotrayNgMprisAdapter(MprisAdapter):  # type: ignore
 
     def get_tracks(self) -> list[DbusObj]:
         # TODO
-        pass
+        return []
 
     def can_edit_tracks(self) -> bool:
         return False
