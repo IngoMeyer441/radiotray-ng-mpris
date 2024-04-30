@@ -48,9 +48,9 @@ build-linux-executable:
       libffi-devel
       openssl-devel
       zlib-devel
-  - curl -fLO 'https://www.python.org/ftp/python/3.10.8/Python-3.10.8.tgz'
-  - tar -xvf Python-3.10.8.tgz
-  - cd Python-3.10.8
+  - curl -fLO 'https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tgz'
+  - tar -xvf Python-3.12.3.tgz
+  - cd Python-3.12.3
   - ./configure --enable-shared --enable-optimizations --with-lto
   - make -j 4
   - make install
@@ -60,10 +60,19 @@ build-linux-executable:
   - python3 -m pip install -U pip setuptools wheel
   - patch -Np1 < <(
       echo 'diff --git a/setup.py b/setup.py';
-      echo 'index 486542f..93a40b7 100644';
+      echo 'index ff4d4de..c96f4b5 100644';
       echo '--- a/setup.py';
       echo '+++ b/setup.py';
-      echo '@@ -41,6 +41,9 @@ if __name__ == "__main__":';
+      echo '@@ -23,6 +23,7 @@ class PyinstallerCommand(Command):';
+      echo '             subprocess.check_call(';
+      echo -n '                 ';
+      echo '[os.path.join(temp_dir, "env/bin/pip"), "install", "--upgrade", "pip", "setuptools", "wheel"]';
+      echo '             )';
+      echo '+            subprocess.check_call([os.path.join(temp_dir, "env/bin/pip"), "install", "pygobject<3.46"])';
+      echo '             subprocess.check_call([os.path.join(temp_dir, "env/bin/pip"), "install", "."])';
+      echo '             subprocess.check_call([os.path.join(temp_dir, "env/bin/pip"), "install", "pyinstaller"])';
+      echo '             with open(os.path.join(temp_dir, "entrypoint.py"), "w") as f:';
+      echo '@@ -40,6 +41,9 @@ if __name__ == "__main__":';
       echo '             subprocess.check_call(';
       echo '                 [';
       echo '                     os.path.join(temp_dir, "env/bin/pyinstaller"),';
