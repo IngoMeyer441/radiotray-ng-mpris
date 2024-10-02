@@ -36,7 +36,7 @@ except ImportError:
     from mpris_server.base import RateDecimal as Rate
     from mpris_server.base import VolumeDecimal as Volume
 
-MAX_DBUS_GET_TRY_COUNT = 10
+MAX_DBUS_GET_TRY_COUNT = 30
 RADIOTRAY_NG_DEFAULT_POLL_INTERVAL = 1000  # ms
 
 
